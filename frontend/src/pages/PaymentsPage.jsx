@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
+import axios from 'axios';
 import { paymentsAPI, leasesAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
-import { CreditCard, Plus, X, Download } from 'lucide-react';
+import { CreditCard, Plus, X, Download, Mail, MessageSquare } from 'lucide-react';
+import PaystackModal from '../components/ui/PaystackModal';
 
 import toast from 'react-hot-toast';
 import clsx from 'clsx';
@@ -86,13 +88,18 @@ function PaymentModal({ onClose, onSave }) {
   );
 }
 
+// PaystackModal is imported from components/ui/PaystackModal.jsx
+
 export default function PaymentsPage() {
   const { user } = useAuth();
   const [payments, setPayments] = useState([]);
   const [arrears, setArrears] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [showPaystackModal, setShowPaystackModal] = useState(false);
   const [tab, setTab] = useState('payments');
+
+  const [bulkSMSLoading, setBulkSMSLoading] = useState(false);
 
   const load = () => {
     Promise.all([paymentsAPI.getAll(), paymentsAPI.getArrears()])
@@ -102,7 +109,54 @@ export default function PaymentsPage() {
 
   useEffect(() => { load(); }, []);
 
-  const methodBadge = { cash: 'badge-slate', mpesa: 'badge-green', bank_transfer: 'badge-blue', cheque: 'badge-yellow', card: 'badge-blue' };
+  const handleRemind = async (lease_id, type) => {
+    const loadingToast = toast.loading(`Sending ${type.toUpperCase()}...`);
+    try {
+      await paymentsAPI.sendReminder({ lease_id, type });
+      toast.success(`${type.toUpperCase()} Reminder Sent!`, { id: loadingToast });
+    } catch (err) {
+      toast.error(err.response?.data?.message || `Failed to send ${type.toUpperCase()}`, { id: loadingToast });
+    }
+  };
+
+  const handleBulkSMSRemind = async () => {
+    if (!window.confirm("Are you sure you want to send SMS reminders to ALL tenants with arrears?")) return;
+
+    setBulkSMSLoading(true);
+    const loadingToast = toast.loading('Sending bulk SMS reminders...');
+    try {
+      const res = await paymentsAPI.sendBulkReminders();
+      toast.success(res.data.message || 'Bulk reminders sent!', { id: loadingToast });
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to send bulk reminders.', { id: loadingToast });
+    } finally {
+      setBulkSMSLoading(false);
+    }
+  };
+
+  const handleDownloadReceipt = async (paymentId, filenameMonth) => {
+    const loadingToast = toast.loading('Generating receipt...');
+    try {
+      const token = localStorage.getItem('rhms_token');
+      const response = await axios.get(`/api/payments/${paymentId}/receipt`, {
+        headers: { Authorization: `Bearer ${token}` },
+        responseType: 'blob'
+      });
+
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `receipt-${filenameMonth}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.parentNode.removeChild(link);
+      toast.success('Receipt downloaded!', { id: loadingToast });
+    } catch (err) {
+      toast.error('Failed to download receipt.', { id: loadingToast });
+    }
+  };
+
+  const methodBadge = { cash: 'badge-slate', paystack: 'badge-blue', bank_transfer: 'badge-blue', cheque: 'badge-yellow', card: 'badge-blue' };
 
   if (loading) return <div className="flex justify-center py-20"><div className="w-8 h-8 border-2 border-primary-500 border-t-transparent rounded-full animate-spin" /></div>;
 
@@ -113,11 +167,17 @@ export default function PaymentsPage() {
           <h1 className="page-title">Payments</h1>
           <p className="page-subtitle">{payments.length} total payments</p>
         </div>
-        {user?.role !== 'tenant' && (
-          <button onClick={() => setShowModal(true)} className="btn-primary flex items-center gap-2">
-            <Plus size={16} /><span>Record Payment</span>
-          </button>
-        )}
+        <div className="flex gap-2">
+          {user?.role !== 'tenant' ? (
+            <button onClick={() => setShowModal(true)} className="btn-primary flex items-center gap-2">
+              <Plus size={16} /><span>Record Payment</span>
+            </button>
+          ) : (
+            <button onClick={() => setShowPaystackModal(true)} className="btn-primary flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white border-none shadow-blue-900/20">
+              <CreditCard size={16} /><span>Pay Rent (Secure Checkout)</span>
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="flex gap-2 mb-5">
@@ -149,7 +209,7 @@ export default function PaymentsPage() {
                       <td>{new Date(p.paid_at).toLocaleDateString()}</td>
                       <td className="text-right">
                         <button
-                          onClick={() => toast.success(`Receipt for ${p.payment_month} is being generated!`)}
+                          onClick={() => handleDownloadReceipt(p.id, p.payment_month)}
                           className="p-1 px-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-primary-400 transition-all flex items-center gap-1.5 ml-auto text-[10px] font-bold uppercase tracking-wider"
                         >
                           <Download size={12} /> Receipt
@@ -167,6 +227,19 @@ export default function PaymentsPage() {
 
       {tab === 'arrears' && (
         <div className="space-y-3">
+          {arrears.length > 0 && user?.role !== 'tenant' && (
+            <div className="flex justify-end mb-4">
+              <button
+                onClick={handleBulkSMSRemind}
+                disabled={bulkSMSLoading}
+                className="btn-primary bg-amber-600 hover:bg-amber-500 border-none shadow-amber-900/20 flex items-center gap-2"
+              >
+                <MessageSquare size={16} />
+                <span>{bulkSMSLoading ? 'Sending...' : 'Send Bulk SMS Reminders'}</span>
+              </button>
+            </div>
+          )}
+
           {arrears.length === 0 ? (
             <div className="card text-center py-16">
               <p className="text-emerald-400 font-medium">🎉 No arrears this month!</p>
@@ -178,9 +251,21 @@ export default function PaymentsPage() {
                 <p className="font-medium text-slate-200">{a.tenant_name}</p>
                 <p className="text-sm text-slate-500">{a.property_name} — Unit {a.unit_number}</p>
               </div>
-              <div className="text-right">
-                <p className="text-red-400 font-bold">KES {Number(a.rent_amount).toLocaleString()}</p>
-                <span className="badge-red badge text-xs">Unpaid</span>
+              <div className="flex items-center gap-4">
+                <div className="text-right">
+                  <p className="text-red-400 font-bold">KES {Number(a.rent_amount).toLocaleString()}</p>
+                  <span className="badge-red badge text-xs">Unpaid</span>
+                </div>
+                {user?.role !== 'tenant' && (
+                  <div className="flex flex-col gap-1 border-l border-slate-700 pl-4 ml-2">
+                    <button onClick={() => handleRemind(a.lease_id, 'sms')} className="flex items-center gap-1.5 text-xs font-semibold text-slate-400 hover:text-amber-400 transition-colors uppercase tracking-wider">
+                      <MessageSquare size={14} /> SMS
+                    </button>
+                    <button onClick={() => handleRemind(a.lease_id, 'email')} className="flex items-center gap-1.5 text-xs font-semibold text-slate-400 hover:text-blue-400 transition-colors uppercase tracking-wider">
+                      <Mail size={14} /> Email
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           ))}
@@ -188,6 +273,7 @@ export default function PaymentsPage() {
       )}
 
       {showModal && <PaymentModal onClose={() => setShowModal(false)} onSave={() => { setShowModal(false); load(); }} />}
+      {showPaystackModal && <PaystackModal onClose={() => setShowPaystackModal(false)} />}
     </div>
   );
 }

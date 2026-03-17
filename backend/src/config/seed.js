@@ -117,8 +117,8 @@ async function seed() {
 
     // ── Payments ───────────────────────────────────────────────────────
     const payments = [
-      ['2026-01-05', '2026-01', 'mpesa'],
-      ['2026-02-03', '2026-02', 'mpesa'],
+      ['2026-01-05', '2026-01', 'paystack'],
+      ['2026-02-03', '2026-02', 'paystack'],
       ['2026-03-01', '2026-03', 'bank_transfer'],
     ];
     for (const [date, month, method] of payments) {

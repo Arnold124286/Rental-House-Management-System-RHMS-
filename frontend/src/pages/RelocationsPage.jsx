@@ -35,6 +35,21 @@ const RelocationsPage = () => {
         }
     };
 
+    const handleRefund = async (id) => {
+        const amount = prompt("Enter amount to refund (KES):");
+        if (!amount || isNaN(amount) || amount <= 0) return toast.error("Invalid amount.");
+        const reason = prompt("Enter reason for refund:");
+
+        const loadingToast = toast.loading('Processing refund...');
+        try {
+            await relocationsAPI.refund(id, { amount, reason: reason || 'Relocation Refund' });
+            toast.success(`Refund of KES ${amount} processed!`, { id: loadingToast });
+            loadRelocations();
+        } catch (err) {
+            toast.error(err.response?.data?.message || 'Failed to process refund.', { id: loadingToast });
+        }
+    };
+
     const statusBadge = {
         pending: 'badge-yellow',
         approved: 'badge-green',
@@ -121,6 +136,14 @@ const RelocationsPage = () => {
                                             className="flex-1 md:flex-none py-2 px-6 rounded-lg bg-emerald-600 text-white hover:bg-emerald-500 shadow-lg shadow-emerald-900/20 transition-all font-semibold text-sm"
                                         >
                                             Approve Move
+                                        </button>
+                                    </div>
+                                )}
+
+                                {user?.role !== 'tenant' && r.status === 'approved' && (
+                                    <div className="mt-2 md:mt-0">
+                                        <button onClick={() => handleRefund(r.id)} className="py-2 px-4 rounded-lg bg-emerald-600/10 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-600 hover:text-white transition-all font-semibold text-sm">
+                                            Refund Overpayment
                                         </button>
                                     </div>
                                 )}

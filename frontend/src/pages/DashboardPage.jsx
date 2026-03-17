@@ -6,15 +6,15 @@ import { Building2, Home, CreditCard, Wrench, Users, AlertCircle, MapPin } from 
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import clsx from 'clsx';
 
-const StatCard = ({ icon: Icon, label, value, color, sub }) => (
-  <div className="stat-card animate-fade-in">
+const StatCard = ({ icon: Icon, label, value, color, sub, className = '' }) => (
+  <div className={clsx("stat-card animate-fade-in flex flex-col justify-between", className)}>
     <div className={clsx('stat-icon', color)}>
       <Icon size={22} />
     </div>
-    <div>
-      <p className="text-xs text-slate-500 font-medium">{label}</p>
-      <p className="text-2xl font-bold text-slate-100 mt-0.5">{value ?? '—'}</p>
-      {sub && <p className="text-xs text-slate-500 mt-0.5">{sub}</p>}
+    <div className="mt-4">
+      <p className="text-sm text-slate-400 font-medium">{label}</p>
+      <p className="text-3xl font-bold text-slate-100 mt-1">{value ?? '—'}</p>
+      {sub && <p className="text-xs text-slate-500 mt-1">{sub}</p>}
     </div>
   </div>
 );
@@ -44,27 +44,30 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="animate-fade-in">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-slate-100">
+    <div className="animate-fade-in w-full max-w-7xl mx-auto">
+      <div className={clsx("mb-8", {
+        "font-outfit": user?.role === 'landlord',
+        "font-quicksand": user?.role === 'tenant'
+      })}>
+        <h1 className="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-slate-100 to-slate-400">
           {greeting()}, {user?.first_name || user?.username} 👋
         </h1>
-        <p className="text-slate-500 mt-1 text-sm">Here's what's happening with your properties today.</p>
+        <p className="text-slate-400 mt-2 text-base font-medium">Here's what's happening with your properties today.</p>
       </div>
 
       {user?.role === 'admin' && data && (
         <>
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-8">
-            <StatCard icon={Users} label="Total Users" value={data.users?.reduce((a, u) => a + parseInt(u.count), 0)} color="bg-violet-500/15 text-violet-400" />
+            <StatCard icon={Users} label="Total Users" value={data.users?.reduce((a, u) => a + parseInt(u.total || 0), 0)} color="bg-violet-500/15 text-violet-400" />
             <StatCard icon={Building2} label="Properties" value={data.properties?.total} color="bg-primary-500/15 text-primary-400" />
-            <StatCard icon={Home} label="Occupied Units" value={data.units?.find(u => u.status === 'occupied')?.count || 0} sub={`of ${data.units?.reduce((a, u) => a + parseInt(u.count), 0)} total`} color="bg-emerald-500/15 text-emerald-400" />
+            <StatCard icon={Home} label="Occupied Units" value={data.units?.find(u => u.status === 'occupied')?.total || 0} sub={`of ${data.units?.reduce((a, u) => a + parseInt(u.total || 0), 0) || 0} total`} color="bg-emerald-500/15 text-emerald-400" />
             <StatCard icon={CreditCard} label="This Month Revenue" value={`KES ${Number(data.current_month_revenue || 0).toLocaleString()}`} color="bg-amber-500/15 text-amber-400" />
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
             <div className="card lg:col-span-2">
               <h3 className="text-sm font-semibold text-slate-300 mb-4">Unit Occupancy Status</h3>
               <ResponsiveContainer width="100%" height={200}>
-                <BarChart data={data.units?.map(u => ({ name: u.status, value: parseInt(u.count) }))}>
+                <BarChart data={data.units?.map(u => ({ name: u.status, value: parseInt(u.total || 0) }))}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
                   <XAxis dataKey="name" tick={{ fill: '#64748b', fontSize: 12 }} />
                   <YAxis tick={{ fill: '#64748b', fontSize: 12 }} />
@@ -79,7 +82,7 @@ export default function DashboardPage() {
                 {data.users?.map(u => (
                   <div key={u.role} className="flex items-center justify-between">
                     <span className="text-sm text-slate-400 capitalize">{u.role}s</span>
-                    <span className="text-sm font-semibold text-slate-200">{u.count}</span>
+                    <span className="text-sm font-semibold text-slate-200">{u.total}</span>
                   </div>
                 ))}
               </div>
@@ -95,32 +98,28 @@ export default function DashboardPage() {
       )}
 
       {user?.role === 'landlord' && data && (
-        <>
+        <div className="font-outfit">
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-8">
-            <StatCard icon={Building2} label="Properties" value={data.properties} color="bg-primary-500/15 text-primary-400" />
-            <StatCard icon={Home} label="Occupied Units" value={data.units?.find(u => u.status === 'occupied')?.count || 0} color="bg-emerald-500/15 text-emerald-400" />
+            <StatCard icon={Building2} label="My Properties" value={data.properties} color="bg-primary-500/15 text-primary-400" />
+            <StatCard icon={Home} label="Occupied Units" value={data.units?.find(u => u.status === 'occupied')?.count || 0} sub={`of ${data.units?.reduce((a, u) => a + parseInt(u.count), 0)} total`} color="bg-emerald-500/15 text-emerald-400" />
             <StatCard icon={CreditCard} label="This Month Revenue" value={`KES ${Number(data.current_month_revenue || 0).toLocaleString()}`} color="bg-amber-500/15 text-amber-400" />
-            <StatCard icon={AlertCircle} label="Rent Arrears" value={data.arrears_count} sub="tenants this month" color="bg-red-500/15 text-red-400" />
+            <StatCard icon={AlertCircle} label="Rent Arrears" value={data.arrears_count || 0} sub="tenants this month" color="bg-red-500/15 text-red-400" />
           </div>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <div className="card">
-              <h3 className="text-sm font-semibold text-slate-300 mb-4">Unit Status</h3>
-              <div className="space-y-3 mt-2">
-                {data.units?.map(u => (
-                  <div key={u.status} className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <div className={clsx('w-2.5 h-2.5 rounded-full', {
-                        'bg-emerald-400': u.status === 'occupied',
-                        'bg-slate-500': u.status === 'vacant',
-                        'bg-amber-400': u.status === 'maintenance',
-                      })} />
-                      <span className="text-sm text-slate-400 capitalize">{u.status}</span>
-                    </div>
-                    <span className="font-semibold text-slate-200">{u.count}</span>
-                  </div>
-                ))}
-              </div>
+          
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            <div className="card lg:col-span-2">
+              <h3 className="text-sm font-semibold text-slate-300 mb-4">Unit Occupancy</h3>
+              <ResponsiveContainer width="100%" height={200}>
+                <BarChart data={data.units?.map(u => ({ name: u.status, value: parseInt(u.count) }))}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
+                  <XAxis dataKey="name" tick={{ fill: '#64748b', fontSize: 12 }} />
+                  <YAxis tick={{ fill: '#64748b', fontSize: 12 }} />
+                  <Tooltip contentStyle={{ background: '#0f172a', border: '1px solid #1e293b', borderRadius: 8 }} />
+                  <Bar dataKey="value" fill="#0ea5e9" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
             </div>
+            
             <div className="card">
               <h3 className="text-sm font-semibold text-slate-300 mb-4">Quick Actions</h3>
               <div className="space-y-2">
@@ -136,55 +135,97 @@ export default function DashboardPage() {
                   </a>
                 ))}
               </div>
+              {data.open_maintenance > 0 && (
+                <div className="mt-4 pt-4 border-t border-slate-800 flex items-center gap-2 text-amber-400">
+                  <Wrench size={14} />
+                  <span className="text-xs">{data.open_maintenance} pending maintenance requests</span>
+                </div>
+              )}
             </div>
           </div>
-        </>
+        </div>
       )}
 
       {user?.role === 'tenant' && data && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="card">
-            <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-4">My Lease</h3>
-            <div className="flex flex-col h-full justify-between">
+        <div className="font-quicksand grid grid-cols-1 xl:grid-cols-3 gap-6">
+          <div className="xl:col-span-2 card bg-gradient-to-br from-slate-900 to-slate-800/50 border border-slate-700/50 shadow-2xl rounded-3xl p-8 relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-primary-500/10 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none" />
+            <h3 className="text-lg font-bold text-slate-300 mb-8 flex items-center gap-3">
+              <Home className="text-primary-400" size={24} /> My Current Lease
+            </h3>
+            <div className="flex flex-col h-full justify-between relative z-10">
               {data.active_lease ? (
-                <div className="space-y-3">
-                  {[['Property', data.active_lease.property_name], ['Unit', data.active_lease.unit_number]].map(([k, v]) => (
-                    <div key={k} className="flex justify-between">
-                      <span className="text-slate-500 text-sm">{k}</span>
-                      <span className="text-slate-200 text-sm font-medium">{v}</span>
-                    </div>
-                  ))}
-                  <div className="flex justify-between">
-                    <span className="text-slate-500 text-sm">Monthly Rent</span>
-                    <span className="text-emerald-400 text-sm font-bold">KES {Number(data.active_lease.rent_amount).toLocaleString()}</span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                  <div className="space-y-6">
+                    {[['Property', data.active_lease.property_name], ['Unit', data.active_lease.unit_number]].map(([k, v]) => (
+                      <div key={k} className="bg-slate-800/50 p-4 rounded-2xl border border-slate-700/50 backdrop-blur-sm">
+                        <span className="text-slate-400 text-sm font-medium block mb-1">{k}</span>
+                        <span className="text-slate-100 text-xl font-bold">{v}</span>
+                      </div>
+                    ))}
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-500 text-sm">Status</span>
-                    <span className="badge-green badge">Active</span>
+                  <div className="space-y-6">
+                    <div className="bg-gradient-to-br from-emerald-900/40 to-emerald-900/10 p-4 rounded-2xl border border-emerald-500/20 backdrop-blur-sm">
+                      <span className="text-emerald-400/80 text-sm font-medium block mb-1">Monthly Rent</span>
+                      <span className="text-emerald-400 text-2xl font-bold flex items-baseline gap-1">
+                        <span className="text-sm font-medium">KES</span> {Number(data.active_lease.rent_amount).toLocaleString()}
+                      </span>
+                    </div>
+                    <div className="bg-slate-800/50 p-4 rounded-2xl border border-slate-700/50 backdrop-blur-sm flex items-center justify-between">
+                      <div>
+                        <span className="text-slate-400 text-sm font-medium block mb-1">Status</span>
+                        <div className="flex items-center gap-2">
+                          <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)] animate-pulse" />
+                          <span className="text-emerald-400 font-bold">Active</span>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
-              ) : <p className="text-slate-500 text-sm">No active lease found.</p>}
+              ) : (
+                <div className="text-center py-12">
+                  <div className="w-16 h-16 bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Home className="text-slate-500" size={32} />
+                  </div>
+                  <h4 className="text-xl font-bold text-slate-300 mb-2">No Active Lease</h4>
+                  <p className="text-slate-500">You do not have an active lease linked to your account yet.</p>
+                </div>
+              )}
 
-              <Link to="/app/relocations" className="mt-6 flex items-center justify-center gap-2 py-3 rounded-xl bg-primary-600/10 text-primary-400 hover:bg-primary-600/20 transition-all font-semibold text-sm">
-                <MapPin size={16} /> Need to move? Request Relocation
+              <Link to="/app/relocations" className="mt-8 flex items-center justify-center gap-2 py-4 rounded-2xl bg-gradient-to-r from-primary-600 to-primary-500 text-white shadow-lg shadow-primary-500/25 hover:shadow-primary-500/40 hover:-translate-y-0.5 transition-all font-bold text-base w-full sm:w-auto self-end px-8">
+                <MapPin size={20} /> Request Relocation
               </Link>
             </div>
           </div>
-          <div className="card">
-            <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-4">Recent Payments</h3>
+          <div className="card bg-slate-800/30 backdrop-blur-md border border-slate-700/50 shadow-xl rounded-3xl p-6 flex flex-col h-full">
+            <h3 className="text-lg font-bold text-slate-300 mb-6 flex items-center gap-3">
+              <CreditCard className="text-emerald-400" size={24} /> Payment History
+            </h3>
             {data.recent_payments?.length > 0 ? (
-              <div className="space-y-2">
+              <div className="space-y-4 overflow-y-auto pr-2 custom-scrollbar flex-1">
                 {data.recent_payments.map(p => (
-                  <div key={p.id} className="flex items-center justify-between p-2.5 rounded-lg bg-slate-800/40">
-                    <div>
-                      <p className="text-sm text-slate-300 font-medium">{p.payment_month}</p>
-                      <p className="text-xs text-slate-500">{p.method}</p>
+                  <div key={p.id} className="flex items-center justify-between p-4 rounded-2xl bg-slate-900/60 border border-slate-800 hover:border-slate-700 transition-colors">
+                    <div className="flex items-center gap-4">
+                      <div className="w-10 h-10 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-400">
+                        <CreditCard size={18} />
+                      </div>
+                      <div>
+                        <p className="text-base text-slate-200 font-bold">{p.payment_month}</p>
+                        <p className="text-xs text-slate-500 uppercase tracking-wide font-semibold mt-0.5">{p.method}</p>
+                      </div>
                     </div>
-                    <span className="text-sm font-semibold text-emerald-400">KES {Number(p.amount).toLocaleString()}</span>
+                    <span className="text-base font-extrabold text-emerald-400">
+                      KES {Number(p.amount).toLocaleString()}
+                    </span>
                   </div>
                 ))}
               </div>
-            ) : <p className="text-slate-500 text-sm">No payments recorded yet.</p>}
+            ) : (
+              <div className="flex-1 flex flex-col items-center justify-center text-center py-8">
+                <CreditCard className="text-slate-600 mb-3" size={32} />
+                <p className="text-slate-400 font-medium">No payments recorded yet.</p>
+              </div>
+            )}
           </div>
         </div>
       )}

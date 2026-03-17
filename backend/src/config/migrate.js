@@ -137,7 +137,7 @@ const migrate = async () => {
         id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
         lease_id UUID NOT NULL REFERENCES leases(id) ON DELETE CASCADE,
         amount DECIMAL(10,2) NOT NULL,
-        method VARCHAR(30) DEFAULT 'cash' CHECK (method IN ('cash', 'mpesa', 'bank_transfer', 'cheque', 'card')),
+        method VARCHAR(30) DEFAULT 'cash' CHECK (method IN ('cash', 'paystack', 'bank_transfer', 'cheque', 'card')),
         transaction_ref VARCHAR(100),
         payment_month VARCHAR(7) NOT NULL, -- Format: YYYY-MM
         status VARCHAR(20) DEFAULT 'confirmed' CHECK (status IN ('pending', 'confirmed', 'failed', 'reversed')),

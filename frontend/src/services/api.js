@@ -76,6 +76,9 @@ export const paymentsAPI = {
   getSummary: (params) => api.get('/payments/summary', { params }),
   getArrears: () => api.get('/payments/arrears'),
   create: (data) => api.post('/payments', data),
+  initializePaystack: (data) => api.post('/payments/paystack/initialize', data),
+  sendReminder: (data) => api.post('/payments/remind', data),
+  sendBulkReminders: () => api.post('/payments/remind-bulk'),
 };
 
 // Maintenance
@@ -123,6 +126,7 @@ export const relocationsAPI = {
   getAll: (params) => api.get('/relocations', { params }),
   create: (data) => api.post('/relocations', data),
   updateStatus: (id, data) => api.put(`/relocations/${id}/status`, data),
+  refund: (id, data) => api.post(`/relocations/${id}/refund`, data),
 };
 
 // Upload

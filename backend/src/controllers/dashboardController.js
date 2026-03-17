@@ -27,7 +27,7 @@ const getDashboard = async (req, res, next) => {
 
       const [props, units, revenue, arrears, maintenance] = await Promise.all([
         pool.query(`SELECT COUNT(*) FROM properties WHERE landlord_id=$1`, [lid]),
-        pool.query(`SELECT COUNT(*), status FROM units u JOIN properties p ON u.property_id=p.id WHERE p.landlord_id=$1 GROUP BY status`, [lid]),
+        pool.query(`SELECT COUNT(*), u.status FROM units u JOIN properties p ON u.property_id=p.id WHERE p.landlord_id=$1 GROUP BY u.status`, [lid]),
         pool.query(`SELECT SUM(py.amount) AS total FROM payments py JOIN leases l ON py.lease_id=l.id JOIN units u ON l.unit_id=u.id JOIN properties p ON u.property_id=p.id WHERE p.landlord_id=$1 AND py.payment_month=$2 AND py.status='confirmed'`, [lid, new Date().toISOString().slice(0,7)]),
         pool.query(`SELECT COUNT(*) FROM leases l JOIN units u ON l.unit_id=u.id JOIN properties p ON u.property_id=p.id WHERE p.landlord_id=$1 AND l.status='active' AND l.id NOT IN (SELECT lease_id FROM payments WHERE payment_month=$2 AND status='confirmed')`, [lid, new Date().toISOString().slice(0,7)]),
         pool.query(`SELECT COUNT(*) FROM maintenance_requests mr JOIN units u ON mr.unit_id=u.id JOIN properties p ON u.property_id=p.id WHERE p.landlord_id=$1 AND mr.status='open'`, [lid]),

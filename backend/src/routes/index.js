@@ -40,6 +40,13 @@ payRouter.get('/', authenticate, payc.getPayments);
 payRouter.get('/summary', authenticate, payc.getPaymentSummary);
 payRouter.get('/arrears', authenticate, payc.getArrears);
 payRouter.post('/', authenticate, authorize('landlord', 'admin'), payc.createPayment);
+payRouter.get('/:id/receipt', authenticate, payc.downloadReceipt);
+
+// Paystack Integration
+payRouter.post('/paystack/initialize', authenticate, authorize('tenant'), payc.initializePaystack);
+payRouter.post('/paystack/webhook', express.json({ type: 'application/json' }), payc.paystackWebhook);
+payRouter.post('/remind', authenticate, authorize('landlord', 'admin'), payc.sendReminder);
+payRouter.post('/remind-bulk', authenticate, authorize('landlord', 'admin'), payc.sendBulkReminders);
 
 // Maintenance
 const maintRouter = express.Router();
@@ -93,6 +100,7 @@ const relc = require('../controllers/relocationController');
 relocationRouter.get('/', authenticate, relc.getRelocations);
 relocationRouter.post('/', authenticate, authorize('tenant'), relc.createRelocationRequest);
 relocationRouter.put('/:id/status', authenticate, authorize('landlord', 'admin'), relc.updateRelocationStatus);
+relocationRouter.post('/:id/refund', authenticate, authorize('landlord', 'admin'), relc.processRefund);
 
 module.exports = { propRouter, unitRouter, leaseRouter, payRouter, maintRouter, dashRouter, userRouter, reviewRouter, leaseReqRouter, complaintRouter, relocationRouter };
 

@@ -107,4 +107,37 @@ const updateRelocationStatus = async (req, res, next) => {
     }
 };
 
-module.exports = { getRelocations, createRelocationRequest, updateRelocationStatus };
+// POST /api/relocations/:id/refund
+const processRefund = async (req, res, next) => {
+    try {
+        const { amount, reason } = req.body;
+
+        const requestRes = await pool.query('SELECT * FROM relocation_requests WHERE id = $1', [req.params.id]);
+        if (!requestRes.rows.length) return res.status(404).json({ success: false, message: 'Request not found.' });
+
+        const request = requestRes.rows[0];
+
+        // Find the most recent lease for this tenant and current unit to attach refund
+        const leaseRes = await pool.query('SELECT id FROM leases WHERE tenant_id = $1 ORDER BY created_at DESC LIMIT 1', [request.tenant_id]);
+        const lease_id = leaseRes.rows.length ? leaseRes.rows[0].id : null;
+
+        if (!lease_id) return res.status(400).json({ success: false, message: 'No lease found to attach refund to.' });
+
+        // Record refund as negative payment
+        const refundAmount = -Math.abs(amount);
+        const paymentMonth = new Date().toISOString().slice(0, 7);
+
+        await pool.query(`
+            INSERT INTO payments (lease_id, amount, method, payment_month, notes, status)
+            VALUES ($1, $2, 'cash', $3, $4, 'confirmed')
+        `, [lease_id, refundAmount, paymentMonth, `Refund: ${reason}`]);
+
+        // Log refund
+        await pool.query(`INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details) VALUES ($1,'REFUND_PROCESSED','relocation_request',$2, $3)`,
+            [req.user.id, request.id, JSON.stringify({ amount, reason })]);
+
+        res.json({ success: true, message: `Refund of ${amount} processed successfully.` });
+    } catch (err) { next(err); }
+};
+
+module.exports = { getRelocations, createRelocationRequest, updateRelocationStatus, processRefund };

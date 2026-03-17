@@ -16,6 +16,8 @@ export default {
       fontFamily: {
         sans: ['Plus Jakarta Sans', 'system-ui', 'sans-serif'],
         mono: ['JetBrains Mono', 'monospace'],
+        outfit: ['Outfit', 'sans-serif'],
+        quicksand: ['Quicksand', 'sans-serif'],
       },
     },
   },

@@ -109,7 +109,10 @@ export default function AppLayout() {
   );
 
   return (
-    <div className="flex h-screen overflow-hidden">
+    <div className={clsx("flex h-screen overflow-hidden", {
+      "font-outfit": user?.role === 'landlord',
+      "font-quicksand": user?.role === 'tenant'
+    })}>
       <aside className="hidden lg:flex flex-col w-64 bg-slate-900 border-r border-slate-800 flex-shrink-0">
         <SidebarContent />
       </aside>

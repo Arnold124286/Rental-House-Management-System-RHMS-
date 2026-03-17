@@ -68,19 +68,19 @@ const Marketplace = () => {
     );
 
     return (
-        <div className="min-h-screen bg-slate-950 p-6">
+        <div className="min-h-screen bg-slate-50 p-6 font-quicksand">
             <div className="max-w-7xl mx-auto">
                 <header className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12">
                     <div>
-                        <h1 className="text-3xl font-bold text-white mb-2">Explore Available Houses</h1>
-                        <p className="text-slate-400">Discover your next home from our approved collection</p>
+                        <h1 className="text-3xl font-extrabold text-slate-900 mb-2">Explore Available Houses</h1>
+                        <p className="text-slate-500 font-medium">Discover your next home from our approved collection</p>
                     </div>
                     <div className="flex flex-col gap-4 max-w-xl w-full">
                         <div className="relative">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={20} />
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
                             <input
                                 type="text"
-                                className="input pl-10"
+                                className="input pl-10 bg-white border-slate-200 text-slate-800 placeholder:text-slate-400 focus:border-primary-500 focus:ring-primary-500/20 shadow-sm rounded-xl py-3"
                                 placeholder="Search by name or city..."
                                 value={searchTerm}
                                 onChange={e => setSearchTerm(e.target.value)}
@@ -91,10 +91,11 @@ const Marketplace = () => {
                                 <button
                                     key={cat.id}
                                     onClick={() => setActiveCategory(cat.id)}
-                                    className={`px-4 py-1.5 rounded-full text-xs font-semibold border transition-all ${activeCategory === cat.id
-                                        ? 'bg-primary-600 border-primary-500 text-white shadow-lg shadow-primary-900/40'
-                                        : 'bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-700'
+                                    className={`px-5 py-2 rounded-full text-sm font-bold border transition-all ${activeCategory === cat.id
+                                        ? 'border-transparent text-white shadow-md'
+                                        : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50'
                                         }`}
+                                    style={activeCategory === cat.id ? { backgroundColor: '#1d4ed8' } : {}}
                                 >
                                     {cat.name}
                                 </button>
@@ -106,83 +107,101 @@ const Marketplace = () => {
 
                 {loading ? (
                     <div className="flex justify-center py-20">
-                        <div className="w-10 h-10 border-2 border-primary-500 border-t-transparent rounded-full animate-spin" />
+                        <div className="w-10 h-10 border-4 border-primary-500 border-t-transparent rounded-full animate-spin" />
                     </div>
                 ) : filteredProperties.length === 0 ? (
-                    <div className="text-center py-20 card bg-slate-900/50 border-dashed border-slate-800">
-                        <Building2 className="mx-auto text-slate-700 mb-4" size={48} />
-                        <p className="text-slate-400">No approved houses matching your search were found.</p>
+                    <div className="text-center py-20 bg-white border border-dashed border-slate-300 rounded-3xl shadow-sm">
+                        <Building2 className="mx-auto text-slate-300 mb-4" size={48} />
+                        <h3 className="text-lg font-bold text-slate-700 mb-1">No Houses Found</h3>
+                        <p className="text-slate-500">No approved houses matching your criteria are currently available.</p>
                     </div>
                 ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    <div className="flex flex-col gap-5">
                         {filteredProperties.map(p => (
-                            <div key={p.id} className="card-hover overflow-hidden group">
-                                <div className="aspect-video bg-slate-800 relative">
-                                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 to-transparent" />
-                                    <div className="absolute top-4 right-4">
-                                        <span className="bg-slate-900/80 backdrop-blur-md px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider text-primary-400 border border-primary-500/20">
+                            <div key={p.id} className="bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-lg hover:border-primary-200 transition-all duration-300 overflow-hidden flex flex-col sm:flex-row group">
+                                {/* Image panel */}
+                                <div className="sm:w-64 sm:min-w-[256px] h-52 sm:h-auto bg-slate-100 relative overflow-hidden flex-shrink-0">
+                                    <div className="absolute inset-0 bg-gradient-to-br from-slate-200 to-slate-300 flex items-center justify-center">
+                                        <Building2 size={48} className="text-slate-400 group-hover:scale-110 transition-transform duration-500" />
+                                    </div>
+                                    <div className="absolute top-3 left-3">
+                                        <span className="bg-white text-slate-800 text-[10px] font-extrabold uppercase tracking-widest px-2.5 py-1 rounded-md shadow-sm border border-slate-200">
                                             {p.category}
                                         </span>
                                     </div>
-                                    <div className="absolute bottom-4 left-4">
-                                        <span className="badge badge-primary px-3 py-1 text-xs">{p.vacant_units} Units Available</span>
+                                    <div className="absolute bottom-3 left-3">
+                                        <span className="bg-primary-600 text-white text-xs font-bold px-2.5 py-1 rounded-full shadow">
+                                            {p.vacant_units} Units Available
+                                        </span>
                                     </div>
                                 </div>
 
-                                <div className="p-6">
-                                    <div className="flex items-start justify-between mb-2">
-                                        <h3 className="text-xl font-bold text-white">{p.name}</h3>
-                                        <button
-                                            onClick={async () => {
-                                                try {
-                                                    const res = await propertiesAPI.getOne(p.id);
-                                                    setReviewModal(res.data.data);
-                                                } catch (err) {
-                                                    toast.error('Could not load reviews.');
-                                                }
-                                            }}
-                                            className="flex items-center gap-1 text-yellow-500 hover:text-yellow-400 transition-colors"
-                                        >
-                                            <Star size={16} fill="currentColor" />
-                                            <span className="text-sm font-semibold">{p.avg_rating || '5.0'}</span>
-                                            <span className="text-[10px] text-slate-500 ml-1">({p.review_count || 0})</span>
-                                        </button>
-                                    </div>
-                                    <div className="flex items-center gap-2 text-slate-400 text-sm mb-4">
-                                        <MapPin size={16} />
-                                        <span>{p.city}, {p.address}</span>
-                                    </div>
-                                    <p className="text-slate-500 text-sm line-clamp-2 mb-6 leading-relaxed">
-                                        {p.description || "Beautifully managed property with modern amenities and 24/7 security."}
-                                    </p>
-
-                                    <div className="flex items-center justify-between pt-6 border-t border-slate-800">
-                                        <div className="flex flex-col">
-                                            <div className="text-xs text-slate-600">Managed by</div>
-                                            <div className="text-xs text-slate-400 font-medium">{p.landlord_name}</div>
+                                {/* Content */}
+                                <div className="flex-1 p-6 flex flex-col justify-between">
+                                    <div>
+                                        {/* Title row: name + rating badge (like Booking.com) */}
+                                        <div className="flex items-start justify-between gap-4 mb-1">
+                                            <h3 className="text-xl font-extrabold text-slate-900 group-hover:text-primary-700 transition-colors leading-tight">
+                                                {p.name}
+                                            </h3>
+                                            {/* Rating badge — top right like Booking.com */}
+                                            <button
+                                                onClick={async () => {
+                                                    try {
+                                                        const res = await propertiesAPI.getOne(p.id);
+                                                        setReviewModal(res.data.data);
+                                                    } catch (err) {
+                                                        toast.error('Could not load reviews.');
+                                                    }
+                                                }}
+                                                className="flex-shrink-0 flex flex-col items-end gap-0.5 hover:opacity-80 transition-opacity"
+                                            >
+                                                <span className="text-xs font-semibold text-slate-500">{Number(p.avg_rating || 5).toFixed(1) >= 4.5 ? 'Superb' : Number(p.avg_rating || 5).toFixed(1) >= 4 ? 'Very Good' : 'Good'}</span>
+                                                <div className="flex items-center gap-1.5">
+                                                    <span className="text-xs text-slate-400">({p.review_count || 0} reviews)</span>
+                                                    <span className="bg-primary-700 text-white font-extrabold text-sm w-9 h-9 rounded-xl rounded-tr-none flex items-center justify-center shadow">
+                                                        {Number(p.avg_rating || 5).toFixed(1)}
+                                                    </span>
+                                                </div>
+                                            </button>
                                         </div>
-                                        <div className="flex gap-4">
+
+                                        {/* Location */}
+                                        <div className="flex items-center gap-1.5 text-slate-700 text-sm font-semibold mb-3">
+                                            <MapPin size={14} className="text-primary-600" />
+                                            <span>{p.city}, {p.address}</span>
+                                        </div>
+
+                                        {/* Description */}
+                                        <p className="text-slate-700 text-sm leading-relaxed line-clamp-2 font-medium">
+                                            {p.description || "Beautifully managed property with modern amenities and 24/7 security."}
+                                        </p>
+                                    </div>
+
+                                    {/* Footer: landlord + actions */}
+                                    <div className="flex items-end justify-between mt-5 pt-5 border-t border-slate-200">
+                                        <div>
+                                            <div className="text-[10px] text-slate-500 font-extrabold uppercase tracking-widest mb-0.5">Managed by</div>
+                                            <div className="text-sm font-extrabold text-slate-900">{p.landlord_name}</div>
+                                        </div>
+                                        <div className="flex items-center gap-2">
                                             <button
                                                 onClick={async () => {
                                                     try {
                                                         const res = await propertiesAPI.getOne(p.id);
                                                         const unitsWithVideo = res.data.data.units.filter(u => u.video_url);
                                                         if (unitsWithVideo.length > 0) {
-                                                            setVideoModal({
-                                                                url: unitsWithVideo[0].video_url,
-                                                                type: unitsWithVideo[0].video_type || 'youtube'
-                                                            });
+                                                            setVideoModal({ url: unitsWithVideo[0].video_url, type: unitsWithVideo[0].video_type || 'youtube' });
                                                         } else {
-
                                                             toast.error('No showroom video available for this property.');
                                                         }
                                                     } catch (err) {
                                                         toast.error('Error loading video details.');
                                                     }
                                                 }}
-                                                className="text-slate-400 hover:text-primary-500 transition-colors flex items-center gap-1.5 text-sm"
+                                                className="flex items-center gap-1.5 text-sm font-semibold text-slate-500 hover:text-slate-700 border border-slate-200 px-3 py-2 rounded-lg hover:bg-slate-50 transition-all"
                                             >
-                                                <PlayCircle size={18} /> Showroom
+                                                <PlayCircle size={16} /> Showroom
                                             </button>
                                             <button
                                                 onClick={async () => {
@@ -197,13 +216,13 @@ const Marketplace = () => {
                                                         toast.error('Could not load unit details.');
                                                     }
                                                 }}
-                                                className="text-primary-500 flex items-center gap-2 font-semibold hover:text-primary-400 transition-colors group text-sm"
+                                                className="text-white font-bold px-5 py-2 rounded-lg text-sm flex items-center gap-2 transition-all shadow-md hover:opacity-90"
+                                                style={{ backgroundColor: '#1d4ed8' }}
                                             >
-                                                Pick a House <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
+                                                Pick a House <ArrowRight size={16} />
                                             </button>
                                         </div>
                                     </div>
-
                                 </div>
                             </div>
                         ))}
@@ -213,10 +232,10 @@ const Marketplace = () => {
 
             {requestModal && selectedProperty && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-                    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setRequestModal(false)} />
-                    <div className="relative z-10 w-full max-w-md card animate-fade-in">
-                        <h2 className="text-xl font-bold mb-2">Pick your Unit at {selectedProperty.name}</h2>
-                        <p className="text-sm text-slate-400 mb-6">Let the landlord know you are interested.</p>
+                    <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setRequestModal(false)} />
+                    <div className="relative z-10 w-full max-w-md bg-white rounded-3xl p-8 shadow-2xl animate-fade-in border border-slate-100">
+                        <h2 className="text-2xl font-black text-slate-900 mb-2">Pick your Unit at {selectedProperty.name}</h2>
+                        <p className="text-sm font-medium text-slate-500 mb-6">Let the landlord know you are interested.</p>
 
                         <form onSubmit={handleRequest} className="space-y-4">
                             <div>

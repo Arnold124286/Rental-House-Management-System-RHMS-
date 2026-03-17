@@ -139,7 +139,7 @@ export default function AppLayout() {
             <Bell size={18} />
           </button>
         </header>
-        <main className="flex-1 overflow-y-auto p-6">
+        <main className="flex-1 overflow-y-auto">
           <Outlet />
         </main>
       </div>

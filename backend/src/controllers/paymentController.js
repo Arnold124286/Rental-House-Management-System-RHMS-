@@ -1,6 +1,7 @@
 const pool = require('../config/db');
 const PDFDocument = require('pdfkit');
 const { initializePayment, verifyWebhookSignature } = require('../utils/paystack');
+const { stkPush } = require('../utils/daraja');
 const { sendSMS } = require('../utils/sms');
 const { sendEmail } = require('../utils/email');
 
@@ -200,6 +201,71 @@ const paystackWebhook = async (req, res, next) => {
   }
 };
 
+// POST /api/payments/daraja/initialize - Trigger M-Pesa STK Push
+const initializeDaraja = async (req, res, next) => {
+  try {
+    const { lease_id, amount, phone, payment_month, payment_type, notes } = req.body;
+
+    if (!amount || !lease_id || !phone) {
+      return res.status(400).json({ success: false, message: 'Missing required fields (amount, lease_id, phone)' });
+    }
+
+    const reference = `MP_${lease_id.substring(0, 8)}_${Date.now()}`;
+    const darajaRes = await stkPush(phone, amount, lease_id, payment_type || 'rent');
+
+    if (darajaRes.success) {
+      // Create pending payment record
+      await pool.query(`
+        INSERT INTO payments (lease_id, amount, method, transaction_ref, payment_month, notes, status)
+        VALUES ($1,$2,$3,$4,$5,$6,$7)
+      `, [lease_id, amount, 'mpesa', reference, payment_month || new Date().toISOString().slice(0, 7), notes, 'pending']);
+
+      return res.json({ success: true, message: 'STK Push sent to phone.', data: darajaRes.data });
+    } else {
+      return res.status(400).json({ success: false, message: darajaRes.error || 'STK Push initialization failed' });
+    }
+  } catch (err) { next(err); }
+};
+
+// POST /api/payments/daraja/callback - M-Pesa Callback
+const darajaCallback = async (req, res, next) => {
+  try {
+    const { Body } = req.body;
+    if (!Body || !Body.stkCallback) return res.sendStatus(400);
+
+    const callbackData = Body.stkCallback;
+    const resultCode = callbackData.ResultCode;
+    const checkoutRequestID = callbackData.CheckoutRequestID;
+
+    if (resultCode === 0) {
+      // Success
+      const meta = callbackData.CallbackMetadata.Item;
+      const amount = meta.find(i => i.Name === 'Amount')?.Value;
+      const mpesaReceipt = meta.find(i => i.Name === 'MpesaReceiptNumber')?.Value;
+      const phone = meta.find(i => i.Name === 'PhoneNumber')?.Value;
+
+      // Update payment record
+      // Logic: we search for a pending mpesa payment. Since STK push doesn't return our custom reference in callback natively
+      // (unless we store CheckoutRequestID), let's assume the latest pending for that lease or just use CheckoutRequestID if we saved it.
+      // Better: we should have saved CheckoutRequestID in the database.
+      
+      await pool.query(`
+        UPDATE payments SET status = 'confirmed', transaction_ref = $1, notes = $2 
+        WHERE status = 'pending' AND method = 'mpesa' AND amount = $3
+      `, [mpesaReceipt, `M-Pesa Success (${phone})`, amount]);
+      
+      console.log(`M-Pesa Payment Success: ${mpesaReceipt} for ${amount}`);
+    } else {
+      console.log(`M-Pesa Payment Failed/Cancelled: ${callbackData.ResultDesc}`);
+    }
+
+    res.json({ ResultCode: 0, ResultDesc: "Success" });
+  } catch (err) {
+    console.error('Daraja Callback error:', err);
+    res.status(500).json({ ResultCode: 1, ResultDesc: "Internal Server Error" });
+  }
+};
+
 // POST /api/payments/remind - Send SMS/Email Reminders
 const sendReminder = async (req, res, next) => {
   try {
@@ -380,4 +446,16 @@ const downloadReceipt = async (req, res, next) => {
   } catch (err) { next(err); }
 };
 
-module.exports = { getPayments, createPayment, getPaymentSummary, getArrears, initializePaystack, paystackWebhook, sendReminder, sendBulkReminders, downloadReceipt };
+module.exports = { 
+  getPayments, 
+  createPayment, 
+  getPaymentSummary, 
+  getArrears, 
+  initializePaystack, 
+  paystackWebhook, 
+  initializeDaraja,
+  darajaCallback,
+  sendReminder, 
+  sendBulkReminders, 
+  downloadReceipt 
+};

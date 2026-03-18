@@ -3,7 +3,7 @@ import axios from 'axios';
 import { paymentsAPI, leasesAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { CreditCard, Plus, X, Download, Mail, MessageSquare } from 'lucide-react';
-import PaystackModal from '../components/ui/PaystackModal';
+import UnifiedPaymentModal from '../components/ui/UnifiedPaymentModal';
 
 import toast from 'react-hot-toast';
 import clsx from 'clsx';
@@ -273,7 +273,7 @@ export default function PaymentsPage() {
       )}
 
       {showModal && <PaymentModal onClose={() => setShowModal(false)} onSave={() => { setShowModal(false); load(); }} />}
-      {showPaystackModal && <PaystackModal onClose={() => setShowPaystackModal(false)} />}
+      {showPaystackModal && <UnifiedPaymentModal onClose={() => setShowPaystackModal(false)} defaultType="rent" />}
     </div>
   );
 }

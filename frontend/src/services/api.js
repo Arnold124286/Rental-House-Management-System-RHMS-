@@ -77,6 +77,7 @@ export const paymentsAPI = {
   getArrears: () => api.get('/payments/arrears'),
   create: (data) => api.post('/payments', data),
   initializePaystack: (data) => api.post('/payments/paystack/initialize', data),
+  initializeDaraja: (data) => api.post('/payments/daraja/initialize', data),
   sendReminder: (data) => api.post('/payments/remind', data),
   sendBulkReminders: () => api.post('/payments/remind-bulk'),
 };

@@ -5,6 +5,7 @@ import { Link } from 'react-router-dom';
 import { Building2, Home, CreditCard, Wrench, Users, AlertCircle, MapPin } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import clsx from 'clsx';
+import UnifiedPaymentModal from '../components/ui/UnifiedPaymentModal';
 
 const StatCard = ({ icon: Icon, label, value, color, sub, className = '' }) => (
   <div className={clsx("stat-card animate-fade-in flex flex-col justify-between", className)}>
@@ -23,6 +24,7 @@ export default function DashboardPage() {
   const { user } = useAuth();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [showPayModal, setShowPayModal] = useState(false);
 
   useEffect(() => {
     dashboardAPI.get()
@@ -191,7 +193,12 @@ export default function DashboardPage() {
                 Welcome back, {user?.first_name || user?.username} 👋
               </h1>
               <p className="text-white text-lg font-semibold" style={{ textShadow: '0 1px 8px rgba(0,0,0,0.9)' }}>Here's a summary of your current lease and payment history.</p>
-              <div className="h-[2px] w-24 bg-gradient-to-r from-white/60 to-transparent mt-5 rounded-full" />
+              <div className="flex items-center gap-4 mt-6">
+                <div className="h-[2px] w-24 bg-gradient-to-r from-white/60 to-transparent rounded-full" />
+                <button onClick={() => setShowPayModal(true)} className="bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/30 text-white text-xs font-bold px-4 py-2 rounded-xl transition-all">
+                  Quick Pay Rent
+                </button>
+              </div>
             </div>
           </div>
 
@@ -240,9 +247,14 @@ export default function DashboardPage() {
                     <p className="text-slate-500">You do not have an active lease linked to your account yet.</p>
                   </div>
                 )}
-                <Link to="/app/relocations" className="mt-8 flex items-center justify-center gap-2 py-4 rounded-2xl bg-gradient-to-r from-primary-600 to-primary-500 text-white shadow-lg shadow-primary-500/25 hover:shadow-primary-500/40 hover:-translate-y-0.5 transition-all font-bold text-base w-full sm:w-auto self-end px-8">
-                  <MapPin size={20} /> Request Relocation
-                </Link>
+                <div className="mt-8 flex flex-col sm:flex-row gap-3 self-end w-full sm:w-auto">
+                  <button onClick={() => setShowPayModal(true)} className="flex items-center justify-center gap-2 py-4 rounded-2xl bg-emerald-600 text-white shadow-lg shadow-emerald-500/25 hover:bg-emerald-700 transition-all font-bold text-base px-8 flex-1 sm:flex-none">
+                    <CreditCard size={20} /> Pay Rent Now
+                  </button>
+                  <Link to="/app/relocations" className="flex items-center justify-center gap-2 py-4 rounded-2xl bg-gradient-to-r from-primary-600 to-primary-500 text-white shadow-lg shadow-primary-500/25 hover:shadow-primary-500/40 hover:-translate-y-0.5 transition-all font-bold text-base px-8 flex-1 sm:flex-none">
+                    <MapPin size={20} /> Request Relocation
+                  </Link>
+                </div>
               </div>
             </div>
 
@@ -279,6 +291,7 @@ export default function DashboardPage() {
           </div>
         </div>
       )}
+      {showPayModal && <UnifiedPaymentModal onClose={() => setShowPayModal(false)} defaultType="rent" />}
     </div>
   );
 }

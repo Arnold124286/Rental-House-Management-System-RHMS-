@@ -45,6 +45,11 @@ payRouter.get('/:id/receipt', authenticate, payc.downloadReceipt);
 // Paystack Integration
 payRouter.post('/paystack/initialize', authenticate, authorize('tenant'), payc.initializePaystack);
 payRouter.post('/paystack/webhook', express.json({ type: 'application/json' }), payc.paystackWebhook);
+
+// Daraja Integration
+payRouter.post('/daraja/initialize', authenticate, authorize('tenant'), payc.initializeDaraja);
+payRouter.post('/daraja/callback', express.json({ type: 'application/json' }), payc.darajaCallback);
+
 payRouter.post('/remind', authenticate, authorize('landlord', 'admin'), payc.sendReminder);
 payRouter.post('/remind-bulk', authenticate, authorize('landlord', 'admin'), payc.sendBulkReminders);
 

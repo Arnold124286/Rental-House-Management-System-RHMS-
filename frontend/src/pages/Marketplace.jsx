@@ -7,6 +7,7 @@ import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import ReviewList from '../components/ui/ReviewList';
 import ReviewForm from '../components/ui/ReviewForm';
+import UnifiedPaymentModal from '../components/ui/UnifiedPaymentModal';
 
 const Marketplace = () => {
     const { user } = useAuth();
@@ -20,6 +21,7 @@ const Marketplace = () => {
     const [requestData, setRequestData] = useState({ unit_id: '', message: '' });
     const [videoModal, setVideoModal] = useState(null); // { url, type }
     const [reviewModal, setReviewModal] = useState(null); // { property }
+    const [bookingModal, setBookingModal] = useState(false); // New state for payment modal
 
 
     const categories = [
@@ -232,44 +234,55 @@ const Marketplace = () => {
 
             {requestModal && selectedProperty && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-                    <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setRequestModal(false)} />
-                    <div className="relative z-10 w-full max-w-md bg-white rounded-3xl p-8 shadow-2xl animate-fade-in border border-slate-100">
-                        <h2 className="text-2xl font-black text-slate-900 mb-2">Pick your Unit at {selectedProperty.name}</h2>
-                        <p className="text-sm font-medium text-slate-500 mb-6">Let the landlord know you are interested.</p>
+                    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setRequestModal(false)} />
+                    <div className="relative z-10 w-full max-w-sm bg-white rounded-[2rem] p-8 shadow-2xl animate-in zoom-in duration-300 border border-slate-100">
+                        <div className="flex items-center justify-between mb-6">
+                            <h2 className="text-xl font-black text-slate-900 leading-tight">Pick your Unit at {selectedProperty.name}</h2>
+                            <button onClick={() => setRequestModal(false)} className="text-slate-400 hover:text-slate-600 transition-colors"><X size={24} /></button>
+                        </div>
+                        
+                        <p className="text-sm font-medium text-slate-500 mb-8 leading-relaxed">Choose your preferred unit and decide how you want to proceed.</p>
 
-                        <form onSubmit={handleRequest} className="space-y-4">
+                        <form onSubmit={handleRequest} className="space-y-6">
                             <div>
-                                <label className="label">Select Unit</label>
+                                <label className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 block">Select Unit</label>
                                 <select
-                                    className="input"
+                                    className="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-sm font-bold text-slate-700 focus:ring-2 focus:ring-primary-500 outline-none transition-all"
                                     required
                                     value={requestData.unit_id}
                                     onChange={e => setRequestData(d => ({ ...d, unit_id: e.target.value }))}
                                 >
                                     <option value="">Select a vacant unit...</option>
                                     {selectedProperty.units?.map(u => (
-                                        <option key={u.id} value={u.id}>Unit {u.unit_number} - {u.type} (${u.price})</option>
+                                        <option key={u.id} value={u.id}>Unit {u.unit_number} — KES {Number(u.price || selectedProperty.price || 0).toLocaleString()}</option>
                                     ))}
                                 </select>
                             </div>
-                            <div>
-                                <label className="label">Message (Optional)</label>
-                                <textarea
-                                    className="input min-h-[100px]"
-                                    placeholder="Tell the landlord when you'd like to move in..."
-                                    value={requestData.message}
-                                    onChange={e => setRequestData(d => ({ ...d, message: e.target.value }))}
-                                />
-                            </div>
 
-                            <div className="flex gap-3 pt-2">
-                                <button type="button" onClick={() => setRequestModal(false)} className="btn-secondary flex-1">Cancel</button>
-                                <button type="submit" className="btn-primary flex-1">Submit Request</button>
+                            <div className="flex flex-col gap-3">
+                                <button type="submit" className="w-full py-4 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold transition-all text-sm">
+                                    Send Interest (Free)
+                                </button>
+                                <button 
+                                    type="button" 
+                                    onClick={() => { setRequestModal(false); setBookingModal(true); }}
+                                    className="w-full py-4 rounded-2xl bg-primary-600 hover:bg-primary-700 text-white font-black transition-all shadow-xl shadow-primary-500/20 text-sm"
+                                >
+                                    Instant Online Booking
+                                </button>
                             </div>
                         </form>
                     </div>
                 </div>
             )}
+
+            {bookingModal && selectedProperty && (
+                <UnifiedPaymentModal 
+                    onClose={() => setBookingModal(false)} 
+                    defaultType="booking" 
+                />
+            )}
+
             {videoModal && (
                 <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
                     <div className="fixed inset-0 bg-black/90 backdrop-blur-md" onClick={() => setVideoModal(null)} />

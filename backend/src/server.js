@@ -1,16 +1,6 @@
 require('dotenv').config();
 const express = require('express');
 const path = require('path');
-
-app.get('/', (req, res) => {
-  res.json({
-    success: true,
-    message: '🏠 RHMS API is running',
-    version: '1.0.0',
-    endpoints: '/api/...'
-  });
-});
-
 const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
@@ -25,9 +15,6 @@ const {
 } = require('./routes/index');
 const uploadRouter = require('./routes/uploadRouter');
 
-
-
-
 const app = express();
 
 // Security & middleware
@@ -41,10 +28,19 @@ app.use(express.urlencoded({ extended: true }));
 app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
-
 // Rate limiting
 app.use('/api/auth', rateLimit({ windowMs: 15 * 60 * 1000, max: 20, message: { success: false, message: 'Too many requests.' } }));
 app.use('/api/', rateLimit({ windowMs: 15 * 60 * 1000, max: 300 }));
+
+// Root route
+app.get('/', (req, res) => {
+  res.json({
+    success: true,
+    message: '🏠 RHMS API is running',
+    version: '1.0.0',
+    endpoints: '/api/...'
+  });
+});
 
 // Routes
 app.use('/api/auth', authRoutes);
@@ -60,9 +56,6 @@ app.use('/api/lease-requests', leaseReqRouter);
 app.use('/api/complaints', complaintRouter);
 app.use('/api/relocations', relocationRouter);
 app.use('/api/upload', uploadRouter);
-
-
-
 
 // Health check
 app.get('/api/health', (req, res) => {

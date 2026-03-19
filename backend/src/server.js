@@ -2,6 +2,13 @@ require('dotenv').config();
 const express = require('express');
 const path = require('path');
 
+app.get("/", (req, res) => {
+  res.json({
+    success: true,
+    message: "RHMS API is running 🚀"
+  });
+});
+
 const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');

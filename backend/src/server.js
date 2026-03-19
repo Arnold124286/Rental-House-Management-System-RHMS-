@@ -2,10 +2,12 @@ require('dotenv').config();
 const express = require('express');
 const path = require('path');
 
-app.get("/", (req, res) => {
+app.get('/', (req, res) => {
   res.json({
     success: true,
-    message: "RHMS API is running 🚀"
+    message: '🏠 RHMS API is running',
+    version: '1.0.0',
+    endpoints: '/api/...'
   });
 });
 

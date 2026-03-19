@@ -17,22 +17,62 @@ const uploadRouter = require('./routes/uploadRouter');
 
 const app = express();
 
-// Security & middleware
+
+// ================= SECURITY & MIDDLEWARE =================
+
 app.use(helmet());
+
 app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:5173',
+  origin: [
+    'http://localhost:5173',
+    'https://rhms-app.vercel.app',
+    process.env.CLIENT_URL
+  ].filter(Boolean),
   credentials: true,
 }));
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
-app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
-// Rate limiting
-app.use('/api/auth', rateLimit({ windowMs: 15 * 60 * 1000, max: 20, message: { success: false, message: 'Too many requests.' } }));
-app.use('/api/', rateLimit({ windowMs: 15 * 60 * 1000, max: 300 }));
+app.use(
+  morgan(
+    process.env.NODE_ENV === 'production'
+      ? 'combined'
+      : 'dev'
+  )
+);
 
-// Root route
+app.use(
+  '/uploads',
+  express.static(path.join(__dirname, '../uploads'))
+);
+
+
+// ================= RATE LIMIT =================
+
+app.use(
+  '/api/auth',
+  rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 20,
+    message: {
+      success: false,
+      message: 'Too many requests.'
+    }
+  })
+);
+
+app.use(
+  '/api/',
+  rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 300
+  })
+);
+
+
+// ================= ROOT =================
+
 app.get('/', (req, res) => {
   res.json({
     success: true,
@@ -42,7 +82,9 @@ app.get('/', (req, res) => {
   });
 });
 
-// Routes
+
+// ================= ROUTES =================
+
 app.use('/api/auth', authRoutes);
 app.use('/api/properties', propRouter);
 app.use('/api/units', unitRouter);
@@ -57,20 +99,37 @@ app.use('/api/complaints', complaintRouter);
 app.use('/api/relocations', relocationRouter);
 app.use('/api/upload', uploadRouter);
 
-// Health check
+
+// ================= HEALTH =================
+
 app.get('/api/health', (req, res) => {
-  res.json({ success: true, message: 'RHMS API is running 🏠', timestamp: new Date().toISOString() });
+  res.json({
+    success: true,
+    message: 'RHMS API is running 🏠',
+    timestamp: new Date().toISOString()
+  });
 });
 
-// 404 handler
+
+// ================= 404 =================
+
 app.use('*', (req, res) => {
-  res.status(404).json({ success: false, message: `Route ${req.originalUrl} not found.` });
+  res.status(404).json({
+    success: false,
+    message: `Route ${req.originalUrl} not found.`
+  });
 });
 
-// Global error handler
+
+// ================= ERROR =================
+
 app.use(errorHandler);
 
+
+// ================= START =================
+
 const PORT = process.env.PORT || 5000;
+
 app.listen(PORT, () => {
   console.log('');
   console.log('🏠 ======================================');

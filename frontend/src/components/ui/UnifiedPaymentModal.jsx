@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { X, Phone, CreditCard, Building2, Globe, ShieldCheck, Bitcoin, Apple, Banknote, ChevronRight } from 'lucide-react';
 import { paymentsAPI, leasesAPI } from '../../services/api';
+import { useAuth } from '../../context/AuthContext';
 import toast from 'react-hot-toast';
 
 /**
@@ -99,6 +100,7 @@ const GLOBAL_METHODS = [
 ];
 
 export default function UnifiedPaymentModal({ onClose, defaultType = 'rent' }) {
+    const { user } = useAuth();
     const [leases, setLeases] = useState([]);
     const [form, setForm] = useState({
         lease_id: '',
@@ -125,6 +127,12 @@ export default function UnifiedPaymentModal({ onClose, defaultType = 'rent' }) {
             setGatewayMode('daraja');
         }
     }, [defaultType]);
+
+    useEffect(() => {
+        if (user?.phone) {
+            setForm(prev => ({ ...prev, phone: user.phone }));
+        }
+    }, [user]);
 
     const handleLeaseChange = (e) => {
         const lease = leases.find(l => l.id === e.target.value);
@@ -192,8 +200,8 @@ export default function UnifiedPaymentModal({ onClose, defaultType = 'rent' }) {
         }
     };
 
-    const inputStyle = 'w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-primary-500 outline-none transition-all text-sm';
-    const labelStyle = 'block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5';
+    const inputStyle = 'w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all text-sm text-slate-950 font-bold placeholder:text-slate-400';
+    const labelStyle = 'block text-[11px] font-black text-slate-700 uppercase tracking-wider mb-1.5';
 
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
@@ -206,7 +214,7 @@ export default function UnifiedPaymentModal({ onClose, defaultType = 'rent' }) {
                     <div className="flex items-center justify-between mb-5">
                         <div>
                             <h2 className="text-xl font-black text-slate-900 tracking-tight">Payment Details</h2>
-                            <p className="text-xs text-slate-400 font-medium mt-0.5">Step {step} of 2 — {step === 1 ? 'Choose method' : currentMethodLabel}</p>
+                            <p className="text-xs text-slate-500 font-bold mt-0.5">Step {step} of 2 — {step === 1 ? 'Choose method' : currentMethodLabel}</p>
                         </div>
                         <button onClick={onClose} className="p-2 bg-slate-100 hover:bg-slate-200 rounded-full transition-colors">
                             <X size={20} className="text-slate-500" />
@@ -233,10 +241,10 @@ export default function UnifiedPaymentModal({ onClose, defaultType = 'rent' }) {
                                     >
                                         <span className="text-2xl">{mode.icon}</span>
                                         <div className="flex-1 min-w-0">
-                                            <p className={`font-bold text-sm ${gatewayMode === mode.id ? mode.color : 'text-slate-700'}`}>
+                                            <p className={`font-bold text-sm ${gatewayMode === mode.id ? mode.color : 'text-slate-900'}`}>
                                                 {mode.label}
                                             </p>
-                                            <p className="text-[11px] text-slate-400 font-medium truncate">{mode.description}</p>
+                                            <p className="text-[11px] text-slate-500 font-bold truncate">{mode.description}</p>
                                         </div>
                                         {gatewayMode === mode.id && (
                                             <div className={`h-6 w-6 rounded-full ${mode.checkBg} flex items-center justify-center text-white flex-shrink-0`}>
@@ -274,7 +282,7 @@ export default function UnifiedPaymentModal({ onClose, defaultType = 'rent' }) {
                                                             </span>
                                                         )}
                                                     </div>
-                                                    <p className="text-[11px] text-slate-400">{method.sub}</p>
+                                                    <p className="text-[11px] text-slate-500 font-semibold">{method.sub}</p>
                                                 </div>
                                                 {globalMethod === method.id
                                                     ? <ShieldCheck size={16} className="text-blue-500 flex-shrink-0" />
@@ -294,12 +302,21 @@ export default function UnifiedPaymentModal({ onClose, defaultType = 'rent' }) {
                                     <label className={labelStyle}>Lease / Unit *</label>
                                     <select value={form.lease_id} onChange={handleLeaseChange} required className={inputStyle}>
                                         <option value="">Select active lease</option>
-                                        {leases.map(l => (
-                                            <option key={l.id} value={l.id}>
-                                                Unit {l.unit_number} ({l.property_name})
-                                            </option>
-                                        ))}
+                                        {leases.length > 0 ? (
+                                            leases.map(l => (
+                                                <option key={l.id} value={l.id}>
+                                                    Unit {l.unit_number} ({l.property_name})
+                                                </option>
+                                            ))
+                                        ) : (
+                                            <option disabled>No active leases found</option>
+                                        )}
                                     </select>
+                                    {leases.length === 0 && (
+                                        <p className="text-[10px] text-red-500 font-bold mt-1.5 px-2 py-1 bg-red-50 rounded-lg">
+                                            ⚠️ You have no active leases at the moment.
+                                        </p>
+                                    )}
                                 </div>
 
                                 <div className="grid grid-cols-2 gap-4">
@@ -366,7 +383,7 @@ export default function UnifiedPaymentModal({ onClose, defaultType = 'rent' }) {
                                                 {GLOBAL_METHODS.find(m => m.id === globalMethod)?.label} via Paystack
                                             </p>
                                         </div>
-                                        <p className="text-[11px] text-slate-500 leading-relaxed">
+                                        <p className="text-[11px] text-slate-600 font-medium leading-relaxed">
                                             You'll be redirected to a secure Paystack checkout page to complete your payment.
                                         </p>
                                     </div>
@@ -379,7 +396,7 @@ export default function UnifiedPaymentModal({ onClose, defaultType = 'rent' }) {
                                             <Apple size={15} className="text-gray-800" />
                                             <p className="text-xs font-bold text-gray-800 uppercase tracking-wide">Apple Pay</p>
                                         </div>
-                                        <p className="text-[11px] text-slate-500 leading-relaxed">
+                                        <p className="text-[11px] text-slate-600 font-medium leading-relaxed">
                                             Apple Pay is available on Safari on iPhone, iPad, and Mac. Tap <strong>Complete Payment</strong> to open Apple Pay.
                                         </p>
                                     </div>
@@ -392,7 +409,7 @@ export default function UnifiedPaymentModal({ onClose, defaultType = 'rent' }) {
                                             <Bitcoin size={15} className="text-orange-500" />
                                             <p className="text-xs font-bold text-orange-700 uppercase tracking-wide">Crypto Payment (Beta)</p>
                                         </div>
-                                        <p className="text-[11px] text-slate-500 leading-relaxed">
+                                        <p className="text-[11px] text-slate-600 font-medium leading-relaxed">
                                             Pay with BTC, ETH, USDT, or other coins via Coinbase Commerce. Currently in beta — contact support if you encounter any issues.
                                         </p>
                                     </div>
@@ -411,10 +428,11 @@ export default function UnifiedPaymentModal({ onClose, defaultType = 'rent' }) {
 
                         {/* CTA Button */}
                         <button
-                            type="submit"
+                            type="button"
+                            onClick={handlePay}
                             disabled={loading}
                             className={`w-full py-4 rounded-2xl text-sm font-black text-white transition-all shadow-xl active:scale-95 ${
-                                loading ? 'bg-slate-400' : 'bg-primary-600 hover:bg-primary-700 shadow-primary-500/20'
+                                loading ? 'bg-slate-400' : 'bg-blue-600 hover:bg-blue-700 shadow-blue-500/20'
                             }`}
                         >
                             {loading ? 'Processing...' : step === 1 ? 'Continue →' : 'Complete Payment'}

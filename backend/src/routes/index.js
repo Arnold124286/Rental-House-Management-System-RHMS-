@@ -48,6 +48,7 @@ payRouter.post('/paystack/webhook', express.json({ type: 'application/json' }), 
 
 // Daraja Integration
 payRouter.post('/daraja/initialize', authenticate, authorize('tenant'), payc.initializeDaraja);
+payRouter.post('/stkpush', authenticate, authorize('tenant'), payc.initializeDaraja);
 payRouter.post('/daraja/callback', express.json({ type: 'application/json' }), payc.darajaCallback);
 
 payRouter.post('/remind', authenticate, authorize('landlord', 'admin'), payc.sendReminder);

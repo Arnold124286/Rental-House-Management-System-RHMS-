@@ -241,13 +241,13 @@ const Marketplace = () => {
                             <button onClick={() => setRequestModal(false)} className="text-slate-400 hover:text-slate-600 transition-colors"><X size={24} /></button>
                         </div>
                         
-                        <p className="text-sm font-medium text-slate-500 mb-8 leading-relaxed">Choose your preferred unit and decide how you want to proceed.</p>
+                        <p className="text-sm font-medium text-slate-600 mb-8 leading-relaxed">Choose your preferred unit and decide how you want to proceed.</p>
 
                         <form onSubmit={handleRequest} className="space-y-6">
                             <div>
-                                <label className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 block">Select Unit</label>
+                                <label className="text-[11px] font-black text-slate-700 uppercase tracking-widest mb-2 block">Select Unit</label>
                                 <select
-                                    className="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-sm font-bold text-slate-700 focus:ring-2 focus:ring-primary-500 outline-none transition-all"
+                                    className="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-sm font-extrabold text-slate-900 focus:ring-2 focus:ring-primary-500 outline-none transition-all shadow-sm"
                                     required
                                     value={requestData.unit_id}
                                     onChange={e => setRequestData(d => ({ ...d, unit_id: e.target.value }))}

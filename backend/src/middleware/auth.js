@@ -12,9 +12,14 @@ const authenticate = async (req, res, next) => {
     const token = authHeader.split(' ')[1];
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    // Fetch fresh user data
+    // Fetch fresh user data (including phone from tenant/landlord profile)
     const result = await pool.query(
-      'SELECT id, username, email, role, first_name, last_name, is_active FROM users WHERE id = $1',
+      `SELECT u.id, u.username, u.email, u.role, u.first_name, u.last_name, u.is_active,
+              COALESCE(t.phone, l.phone) AS phone
+       FROM users u
+       LEFT JOIN tenants t ON t.user_id = u.id AND u.role = 'tenant'
+       LEFT JOIN landlords l ON l.user_id = u.id AND u.role = 'landlord'
+       WHERE u.id = $1`,
       [decoded.id]
     );
 

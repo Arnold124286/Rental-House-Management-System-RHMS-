@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
 import { paymentsAPI, leasesAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { CreditCard, Plus, X, Download, Mail, MessageSquare } from 'lucide-react';
@@ -137,19 +136,15 @@ export default function PaymentsPage() {
   const handleDownloadReceipt = async (paymentId, filenameMonth) => {
     const loadingToast = toast.loading('Generating receipt...');
     try {
-      const token = localStorage.getItem('rhms_token');
-      const response = await axios.get(`/api/payments/${paymentId}/receipt`, {
-        headers: { Authorization: `Bearer ${token}` },
-        responseType: 'blob'
-      });
-
-      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const response = await paymentsAPI.downloadReceipt(paymentId);
+      const url = window.URL.createObjectURL(new Blob([response.data], { type: 'application/pdf' }));
       const link = document.createElement('a');
       link.href = url;
       link.setAttribute('download', `receipt-${filenameMonth}.pdf`);
       document.body.appendChild(link);
       link.click();
       link.parentNode.removeChild(link);
+      window.URL.revokeObjectURL(url);
       toast.success('Receipt downloaded!', { id: loadingToast });
     } catch (err) {
       toast.error('Failed to download receipt.', { id: loadingToast });

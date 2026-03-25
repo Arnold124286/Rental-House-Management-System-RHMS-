@@ -80,6 +80,7 @@ export const paymentsAPI = {
   initializeDaraja: (data) => api.post('/payments/daraja/initialize', data),
   sendReminder: (data) => api.post('/payments/remind', data),
   sendBulkReminders: () => api.post('/payments/remind-bulk'),
+  downloadReceipt: (id) => api.get(`/payments/${id}/receipt`, { responseType: 'blob' }),
 };
 
 // Maintenance

@@ -137,8 +137,9 @@ const migrate = async () => {
         id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
         lease_id UUID NOT NULL REFERENCES leases(id) ON DELETE CASCADE,
         amount DECIMAL(10,2) NOT NULL,
-        method VARCHAR(30) DEFAULT 'cash' CHECK (method IN ('cash', 'paystack', 'bank_transfer', 'cheque', 'card')),
+        method VARCHAR(30) DEFAULT 'cash' CHECK (method IN ('cash', 'paystack', 'bank_transfer', 'cheque', 'card', 'mpesa')),
         transaction_ref VARCHAR(100),
+        mpesa_checkout_id VARCHAR(100), -- Unique ID from Daraja STK Push
         payment_month VARCHAR(7) NOT NULL, -- Format: YYYY-MM
         status VARCHAR(20) DEFAULT 'confirmed' CHECK (status IN ('pending', 'confirmed', 'failed', 'reversed')),
         notes TEXT,
@@ -245,6 +246,7 @@ const migrate = async () => {
     await client.query(`CREATE INDEX idx_leases_status ON leases(status);`);
     await client.query(`CREATE INDEX idx_payments_lease ON payments(lease_id);`);
     await client.query(`CREATE INDEX idx_payments_month ON payments(payment_month);`);
+    await client.query(`CREATE UNIQUE INDEX idx_payments_mpesa_checkout ON payments(mpesa_checkout_id) WHERE mpesa_checkout_id IS NOT NULL;`);
     await client.query(`CREATE INDEX idx_maintenance_unit ON maintenance_requests(unit_id);`);
     await client.query(`CREATE INDEX idx_maintenance_status ON maintenance_requests(status);`);
     await client.query(`CREATE INDEX idx_audit_user ON audit_logs(user_id);`);

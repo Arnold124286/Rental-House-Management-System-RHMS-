@@ -205,6 +205,7 @@ const paystackWebhook = async (req, res, next) => {
 const initializeDaraja = async (req, res, next) => {
   try {
     const { lease_id, amount, phone, payment_month, payment_type, notes } = req.body;
+    console.log('Initialize Daraja Request:', { lease_id, amount, phone, payment_month, payment_type, notes });
 
     if (!amount || !lease_id || !phone) {
       return res.status(400).json({ success: false, message: 'Missing required fields (amount, lease_id, phone)' });
@@ -212,13 +213,15 @@ const initializeDaraja = async (req, res, next) => {
 
     const reference = `MP_${lease_id.substring(0, 8)}_${Date.now()}`;
     const darajaRes = await stkPush(phone, amount, lease_id, payment_type || 'rent');
+    console.log('Daraja Response:', darajaRes);
 
     if (darajaRes.success) {
       // Create pending payment record
+      const checkoutRequestID = darajaRes.data.CheckoutRequestID;
       await pool.query(`
-        INSERT INTO payments (lease_id, amount, method, transaction_ref, payment_month, notes, status)
-        VALUES ($1,$2,$3,$4,$5,$6,$7)
-      `, [lease_id, amount, 'mpesa', reference, payment_month || new Date().toISOString().slice(0, 7), notes, 'pending']);
+        INSERT INTO payments (lease_id, amount, method, transaction_ref, mpesa_checkout_id, payment_month, notes, status)
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
+      `, [lease_id, amount, 'mpesa', reference, checkoutRequestID, payment_month || new Date().toISOString().slice(0, 7), notes, 'pending']);
 
       return res.json({ success: true, message: 'STK Push sent to phone.', data: darajaRes.data });
     } else {
@@ -249,10 +252,11 @@ const darajaCallback = async (req, res, next) => {
       // (unless we store CheckoutRequestID), let's assume the latest pending for that lease or just use CheckoutRequestID if we saved it.
       // Better: we should have saved CheckoutRequestID in the database.
       
+      // Update payment record using CheckoutRequestID for precision
       await pool.query(`
         UPDATE payments SET status = 'confirmed', transaction_ref = $1, notes = $2 
-        WHERE status = 'pending' AND method = 'mpesa' AND amount = $3
-      `, [mpesaReceipt, `M-Pesa Success (${phone})`, amount]);
+        WHERE mpesa_checkout_id = $3 AND status = 'pending'
+      `, [mpesaReceipt, `M-Pesa Success (${phone})`, checkoutRequestID]);
       
       console.log(`M-Pesa Payment Success: ${mpesaReceipt} for ${amount}`);
     } else {

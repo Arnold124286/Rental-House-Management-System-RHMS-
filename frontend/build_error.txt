@@ -1,0 +1,28 @@
+
+> frontend@0.0.0 build
+> vite build
+
+[36mvite v7.3.1 [32mbuilding client environment for production...[36m[39m
+transforming...
+[32mΓ£ô[39m 2753 modules transformed.
+Γ£ù Build failed in 13.45s
+error during build:
+src/components/ui/UnifiedPaymentModal.jsx (4:9): "AuthContext" is not exported by "src/context/AuthContext.jsx", imported by "src/components/ui/UnifiedPaymentModal.jsx".
+file: C:/Users/arnol/OneDrive/Desktop/RHMS/frontend/src/components/ui/UnifiedPaymentModal.jsx:4:9
+
+2: import { X, Phone, CreditCard, Building2, Globe, ShieldCheck, Bitcoin, Apple, Banknote, ChevronRight } from 'lucide-r...
+3: import { paymentsAPI, leasesAPI } from '../../services/api';
+4: import { AuthContext } from '../../context/AuthContext';
+            ^
+5: import toast from 'react-hot-toast';
+
+    at getRollupError (file:///C:/Users/arnol/OneDrive/Desktop/RHMS/frontend/node_modules/rollup/dist/es/shared/parseAst.js:402:41)
+    at error (file:///C:/Users/arnol/OneDrive/Desktop/RHMS/frontend/node_modules/rollup/dist/es/shared/parseAst.js:398:42)
+    at Module.error (file:///C:/Users/arnol/OneDrive/Desktop/RHMS/frontend/node_modules/rollup/dist/es/shared/node-entry.js:17040:16)
+    at Module.traceVariable (file:///C:/Users/arnol/OneDrive/Desktop/RHMS/frontend/node_modules/rollup/dist/es/shared/node-entry.js:17452:29)
+    at ModuleScope.findVariable (file:///C:/Users/arnol/OneDrive/Desktop/RHMS/frontend/node_modules/rollup/dist/es/shared/node-entry.js:15070:39)
+    at FunctionScope.findVariable (file:///C:/Users/arnol/OneDrive/Desktop/RHMS/frontend/node_modules/rollup/dist/es/shared/node-entry.js:5673:38)
+    at FunctionBodyScope.findVariable (file:///C:/Users/arnol/OneDrive/Desktop/RHMS/frontend/node_modules/rollup/dist/es/shared/node-entry.js:5673:38)
+    at Identifier.bind (file:///C:/Users/arnol/OneDrive/Desktop/RHMS/frontend/node_modules/rollup/dist/es/shared/node-entry.js:5447:40)
+    at CallExpression.bind (file:///C:/Users/arnol/OneDrive/Desktop/RHMS/frontend/node_modules/rollup/dist/es/shared/node-entry.js:2825:28)
+    at CallExpression.bind (file:///C:/Users/arnol/OneDrive/Desktop/RHMS/frontend/node_modules/rollup/dist/es/shared/node-entry.js:12179:15)
